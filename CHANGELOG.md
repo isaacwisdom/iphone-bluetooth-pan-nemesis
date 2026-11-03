@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.0
+
+- Simplify the launcher artwork to a dark globe/Bluetooth glyph on a cyan tile matching NEMESIS's Precondition icon.
+
 ## 1.3.0
 
 - Add a purpose-built launcher icon matching the dark dashboard.
