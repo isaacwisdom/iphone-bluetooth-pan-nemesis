@@ -6,6 +6,8 @@
   head-unit models as partial matches.
 - Replace the duplicate post-install startup and logcat keepalive with one
   genuine NEMESIS-supervised PAN/controller service.
+- Present the canonical USB bundle as the primary user download and keep build
+  output limited to the USB bundle and bare Package Store archive.
 
 ## 1.7.0
 

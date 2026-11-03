@@ -15,7 +15,7 @@ ANDROID_JAR=$(find "$SDK/platforms" -mindepth 2 -maxdepth 2 -name android.jar 2>
 [ -f "$ANDROID_JAR" ] || { echo "Android SDK platform android.jar was not found" >&2; exit 1; }
 
 VERSION=$(sed -n 's/package-version=//p' "$ROOT/nemesis/NEMESIS.data")
-rm -rf "$BUILD"
+rm -rf "$BUILD" "$DIST"
 mkdir -p "$BUILD/classes" "$BUILD/dex" "$BUILD/package/app" "$DIST"
 
 javac --release 8 -cp "$ANDROID_JAR" -d "$BUILD/classes" $(find "$ROOT/app/src" -name '*.java' | sort)

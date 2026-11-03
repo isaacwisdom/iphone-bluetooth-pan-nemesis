@@ -27,15 +27,31 @@ standard Gen5W Bluetooth PAN APIs, but they have not yet been tested.
 
 ## Install
 
-Download `iphone.bluetooth.pan-<version>.zip`, then:
+### USB drive (recommended)
+
+Download `iphone.bluetooth.pan-<version>-usb.zip` and extract it to the root of
+a USB drive. The result should look like this:
+
+```text
+NEMESIS.data
+README.txt
+packages/
+└── iphone.bluetooth.pan-<version>.zip
+```
+
+Insert the drive after Android has started and accept the NEMESIS installation
+prompt.
+
+### Package Store or ADB
+
+The bare `iphone.bluetooth.pan-<version>.zip` is the canonical package archive
+used for Package Store submission and direct installation:
 
 ```sh
 adb push iphone.bluetooth.pan-1.8.0.zip /data/local/tmp/iphone.bluetooth.pan.zip
 adb shell '/system/xbin/nemesis install /data/local/tmp/iphone.bluetooth.pan.zip'
 adb shell '/system/xbin/nemesis pkg-launch iphone.bluetooth.pan'
 ```
-
-For USB installation, extract the `-usb.zip` archive to the root of a USB drive and insert it after Android has started.
 
 On the iPhone, enable **Settings → Personal Hotspot → Allow Others to Join**. The phone must already be paired with the vehicle.
 
@@ -62,6 +78,11 @@ Set `ANDROID_HOME`, then run:
 ```sh
 ./build.sh
 ```
+
+The build produces exactly two release artifacts in `dist/`:
+
+- `iphone.bluetooth.pan-<version>-usb.zip` — recommended USB distribution
+- `iphone.bluetooth.pan-<version>.zip` — Package Store and direct-install archive
 
 For release-compatible APK updates, provide the same external signing key each time:
 
