@@ -21,8 +21,9 @@ mkdir -p "$BUILD/classes" "$BUILD/dex" "$BUILD/package/app" "$DIST"
 javac --release 8 -cp "$ANDROID_JAR" -d "$BUILD/classes" $(find "$ROOT/app/src" -name '*.java' | sort)
 jar cf "$BUILD/classes.jar" -C "$BUILD/classes" .
 "$TOOLS/d8" --min-api 19 --lib "$ANDROID_JAR" --output "$BUILD/dex" "$BUILD/classes.jar"
+"$TOOLS/aapt2" compile --dir "$ROOT/app/res" -o "$BUILD/resources.zip"
 "$TOOLS/aapt2" link -I "$ANDROID_JAR" --manifest "$ROOT/app/AndroidManifest.xml" \
-    --min-sdk-version 19 --target-sdk-version 19 -o "$BUILD/base.apk"
+    --min-sdk-version 19 --target-sdk-version 19 -o "$BUILD/base.apk" "$BUILD/resources.zip"
 cp "$BUILD/base.apk" "$BUILD/app-unsigned.apk"
 (cd "$BUILD/dex" && zip -q -X -j "$BUILD/app-unsigned.apk" classes.dex)
 

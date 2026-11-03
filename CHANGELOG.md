@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.0
+
+- Add a purpose-built launcher icon matching the dark dashboard.
+
 ## 1.2.0
 
 - Scale the dashboard to the head unit's actual display resolution.
