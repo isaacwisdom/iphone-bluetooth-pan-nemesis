@@ -29,11 +29,10 @@ start_controller
 
 while true; do
     sleep 15
-    if ! dumpsys activity services com.android.bluetooth/.pan.PanService 2>/dev/null \
-        | grep -q 'ServiceRecord'; then
-        echo "iPhone PAN: stock PAN service stopped; starting it"
-        start_pan
-    fi
+    # Re-sending the adapter-state start request is harmless when PanService is
+    # healthy and repairs the state where its ServiceRecord remains registered
+    # but the profile binder stopped after a disconnect.
+    start_pan >/dev/null 2>&1
     if ! dumpsys activity services "$APP_COMPONENT" 2>/dev/null \
         | grep -q 'ServiceRecord'; then
         echo "iPhone PAN: controller stopped; starting it"

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.8.1
+
+- Reacquire the Bluetooth PAN profile proxy when the stock service disconnects,
+  allowing subsequent connections without restarting the app.
+- Periodically reassert stock PAN initialization to repair a stale registered
+  service whose profile binder is no longer available.
+- Document the canonical NEMESIS update behavior: the previous APK is
+  uninstalled before its replacement is installed, so signer continuity is not
+  required and app preferences reset on update.
+
 ## 1.8.0
 
 - Use the NEMESIS firmware identifier for compatibility and advertise untested

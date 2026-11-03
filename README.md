@@ -48,7 +48,7 @@ The bare `iphone.bluetooth.pan-<version>.zip` is the canonical package archive
 used for Package Store submission and direct installation:
 
 ```sh
-adb push iphone.bluetooth.pan-1.8.0.zip /data/local/tmp/iphone.bluetooth.pan.zip
+adb push iphone.bluetooth.pan-1.8.1.zip /data/local/tmp/iphone.bluetooth.pan.zip
 adb shell '/system/xbin/nemesis install /data/local/tmp/iphone.bluetooth.pan.zip'
 adb shell '/system/xbin/nemesis pkg-launch iphone.bluetooth.pan'
 ```
@@ -84,13 +84,17 @@ The build produces exactly two release artifacts in `dist/`:
 - `iphone.bluetooth.pan-<version>-usb.zip` — recommended USB distribution
 - `iphone.bluetooth.pan-<version>.zip` — Package Store and direct-install archive
 
-For release-compatible APK updates, provide the same external signing key each time:
+You may provide an external signing key:
 
 ```sh
 APP_KEY=/secure/path/iphone-pan.p12 APP_KEY_PASS='…' ./build.sh
 ```
 
-Without `APP_KEY`, the build creates a local development key under `.build/`. Keys and build output are ignored by Git and must never be committed.
+Without `APP_KEY`, the build creates a temporary development key. NEMESIS package
+updates uninstall the previous APK before installing its replacement, so APK
+signer continuity is not required. This also means an update resets the app's
+saved phone selection and reconnect preference. Keys and build output are
+ignored by Git and must never be committed.
 
 ## Safety and limitations
 

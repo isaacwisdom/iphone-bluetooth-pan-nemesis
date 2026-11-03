@@ -29,15 +29,18 @@ public final class PanControllerService extends Service {
     private BluetoothDevice owned;
     private Thread worker;
     private SharedPreferences prefs;
+    private volatile long proxyRequestAt;
 
     private final BluetoothProfile.ServiceListener listener = new BluetoothProfile.ServiceListener() {
         @Override public void onServiceConnected(int profile, BluetoothProfile proxy) {
             pan = proxy;
+            proxyRequestAt = 0L;
             log("PAN profile ready: " + proxy.getClass().getName());
             setStatus("Bluetooth PAN profile ready");
         }
         @Override public void onServiceDisconnected(int profile) {
             pan = null;
+            proxyRequestAt = 0L;
             log("PAN profile disconnected");
             setStatus("Bluetooth PAN profile unavailable");
         }
@@ -49,14 +52,7 @@ public final class PanControllerService extends Service {
         adapter = BluetoothAdapter.getDefaultAdapter();
         log("Android service created; package=" + getPackageName());
         if (adapter == null) { setStatus("No Bluetooth adapter found"); stopSelf(); return; }
-        try {
-            boolean requested = adapter.getProfileProxy(this, listener, PROFILE_PAN);
-            log("PAN profile requested=" + requested);
-        } catch (Throwable t) {
-            setStatus("PAN profile request failed: " + rootMessage(t));
-            stopSelf();
-            return;
-        }
+        requestProfileProxy();
         worker = new Thread("pan-control") {
             @Override public void run() { controlLoop(); }
         };
@@ -145,9 +141,27 @@ public final class PanControllerService extends Service {
     }
 
     private boolean waitForProxy() {
-        for (int i = 0; pan == null && i < 60 && !stop; i++) sleep(500L);
+        for (int i = 0; pan == null && i < 60 && !stop; i++) {
+            requestProfileProxy();
+            sleep(500L);
+        }
         if (pan == null) setStatus("Bluetooth PAN profile did not become ready");
         return pan != null;
+    }
+
+    private synchronized void requestProfileProxy() {
+        if (adapter == null || pan != null || stop) return;
+        long now = System.currentTimeMillis();
+        if (proxyRequestAt != 0L && now - proxyRequestAt < 5000L) return;
+        proxyRequestAt = now;
+        try {
+            boolean requested = adapter.getProfileProxy(this, listener, PROFILE_PAN);
+            log("PAN profile requested=" + requested);
+            if (!requested) proxyRequestAt = 0L;
+        } catch (Throwable t) {
+            proxyRequestAt = 0L;
+            setStatus("PAN profile request failed: " + rootMessage(t));
+        }
     }
 
     private int connectionState(BluetoothDevice d) {
