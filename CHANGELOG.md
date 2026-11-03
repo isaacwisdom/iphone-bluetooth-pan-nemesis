@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.8.0
+
+- Use the NEMESIS firmware identifier for compatibility and advertise untested
+  head-unit models as partial matches.
+- Replace the duplicate post-install startup and logcat keepalive with one
+  genuine NEMESIS-supervised PAN/controller service.
+
 ## 1.7.0
 
 - Crop transparent icon padding so the artwork fills the NEMESIS launcher slot.

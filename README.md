@@ -12,7 +12,9 @@ The package uses the Bluetooth PANU implementation already present in the stock 
 - Android: 4.4.2
 - NEMESIS: 1.16.2
 
-Other systems are not currently declared compatible.
+The tested firmware is a full NEMESIS compatibility match. Other head-unit
+models are shown as partial compatibility because the implementation uses the
+standard Gen5W Bluetooth PAN APIs, but they have not yet been tested.
 
 ## Features
 
@@ -28,7 +30,7 @@ Other systems are not currently declared compatible.
 Download `iphone.bluetooth.pan-<version>.zip`, then:
 
 ```sh
-adb push iphone.bluetooth.pan-1.7.0.zip /data/local/tmp/iphone.bluetooth.pan.zip
+adb push iphone.bluetooth.pan-1.8.0.zip /data/local/tmp/iphone.bluetooth.pan.zip
 adb shell '/system/xbin/nemesis install /data/local/tmp/iphone.bluetooth.pan.zip'
 adb shell '/system/xbin/nemesis pkg-launch iphone.bluetooth.pan'
 ```
@@ -40,8 +42,8 @@ On the iPhone, enable **Settings → Personal Hotspot → Allow Others to Join**
 ## Diagnostics
 
 ```sh
-adb shell '/system/xbin/nemesis service status iphone.bluetooth.pan/pan-control'
-adb shell '/system/xbin/nemesis log service iphone.bluetooth.pan/pan-control'
+adb shell '/system/xbin/nemesis service status iphone.bluetooth.pan/pan-supervisor'
+adb shell '/system/xbin/nemesis log service iphone.bluetooth.pan/pan-supervisor'
 adb shell 'logcat -v time -s BtPanTest:I AndroidRuntime:E'
 ```
 
