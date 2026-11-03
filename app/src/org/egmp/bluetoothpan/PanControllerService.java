@@ -112,7 +112,6 @@ public final class PanControllerService extends Service {
             sleep(1000L);
             int state = connectionState(d);
             log("connection state=" + state + "; " + networkSummary());
-            if (state == DISCONNECTED) break;
             if (state == CONNECTED && networkConnected()) { reportConnected(); return; }
         }
         int state = connectionState(d);

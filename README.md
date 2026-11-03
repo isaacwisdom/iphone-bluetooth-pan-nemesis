@@ -24,6 +24,7 @@ standard Gen5W Bluetooth PAN APIs, but they have not yet been tested.
 - Bluetooth, DHCP, and assigned-address status
 - Optional reconnect when the controller starts, disabled by default
 - Automatic enablement and initialization of the stock PAN profile
+- Persistent connection diagnostics through NEMESIS's built-in log collector
 
 ## Install
 
@@ -48,7 +49,7 @@ The bare `iphone.bluetooth.pan-<version>.zip` is the canonical package archive
 used for Package Store submission and direct installation:
 
 ```sh
-adb push iphone.bluetooth.pan-1.8.1.zip /data/local/tmp/iphone.bluetooth.pan.zip
+adb push iphone.bluetooth.pan-1.9.0.zip /data/local/tmp/iphone.bluetooth.pan.zip
 adb shell '/system/xbin/nemesis install /data/local/tmp/iphone.bluetooth.pan.zip'
 adb shell '/system/xbin/nemesis pkg-launch iphone.bluetooth.pan'
 ```
@@ -60,10 +61,13 @@ On the iPhone, enable **Settings → Personal Hotspot → Allow Others to Join**
 ```sh
 adb shell '/system/xbin/nemesis service status iphone.bluetooth.pan/pan-supervisor'
 adb shell '/system/xbin/nemesis log service iphone.bluetooth.pan/pan-supervisor'
-adb shell 'logcat -v time -s BtPanTest:I AndroidRuntime:E'
 ```
 
-A successful connection creates `bt-pan`, normally with an address in the iPhone's `172.20.10.0/28` network.
+The supervisor log includes the app's connection requests, PAN profile state,
+Bluetooth connection transitions, network state, and Android runtime failures.
+It is also included when **Logs → Copy to USB** is used in NEMESIS Manager. A
+successful connection creates `bt-pan`, normally with an address in the
+iPhone's `172.20.10.0/28` network.
 
 ## Build
 

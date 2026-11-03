@@ -3,10 +3,22 @@
 # This is the long-lived workload supervised by NEMESIS. It prepares the
 # disabled stock PAN profile, starts the APK controller, and periodically
 # restores either service if Android kills it. Its output is the NEMESIS
-# service log; logcat is deliberately not used as a keepalive process.
+# service log. A filtered logcat child feeds APK and Bluetooth diagnostics into
+# that same log; the supervisor loop remains the managed workload.
 
 PAN_COMPONENT=com.android.bluetooth/.pan.PanService
 APP_COMPONENT=org.egmp.bluetoothpan.nemesis/org.egmp.bluetoothpan.PanControllerService
+LOGCAT_PID=
+
+cleanup() {
+    if [ -n "$LOGCAT_PID" ]; then
+        kill "$LOGCAT_PID" >/dev/null 2>&1
+        wait "$LOGCAT_PID" >/dev/null 2>&1
+    fi
+}
+
+trap 'exit 0' 1 2 15
+trap cleanup 0
 
 start_pan() {
     pm enable --user 0 "$PAN_COMPONENT"
@@ -23,7 +35,11 @@ while [ "$(getprop sys.boot_completed)" != "1" ]; do
     sleep 2
 done
 
+echo "===== iPhone Bluetooth PAN 1.9.0 diagnostic session $(date) ====="
 echo "iPhone PAN: supervisor started"
+logcat -v time -s BtPanTest:I BluetoothPan:D PanService:D AndroidRuntime:E '*:S' &
+LOGCAT_PID=$!
+echo "iPhone PAN: diagnostic logcat pid=$LOGCAT_PID"
 start_pan
 start_controller
 

@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.9.0
+
+- Capture filtered application, Bluetooth PAN, and Android runtime messages in
+  the NEMESIS `pan-supervisor` service log.
+- Add timestamped diagnostic-session markers and stop the logcat child cleanly
+  with the supervisor.
+- Keep waiting after transient disconnected readings during an accepted PAN
+  request, rather than reporting failure before the stock service finishes.
+- Request the KitKat `GET_TASKS` permission required by this head unit when the
+  activity closes, preventing the back-button crash seen in captured logs.
+
 ## 1.8.1
 
 - Reacquire the Bluetooth PAN profile proxy when the stock service disconnects,

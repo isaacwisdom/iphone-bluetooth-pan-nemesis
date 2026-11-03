@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.egmp.bluetoothpan.nemesis"
-    android:versionCode="170"
-    android:versionName="1.7.0">
+    android:versionCode="190"
+    android:versionName="1.9.0">
     <uses-sdk android:minSdkVersion="19" android:targetSdkVersion="19" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Required by this head unit's KitKat Activity.finish() implementation. -->
+    <uses-permission android:name="android.permission.GET_TASKS" />
     <application android:label="iPhone Bluetooth PAN" android:icon="@drawable/icon" android:allowBackup="false"
         android:theme="@android:style/Theme.Holo.NoActionBar">
         <activity android:name="org.egmp.bluetoothpan.MainActivity" android:label="iPhone Bluetooth PAN"
