@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.6.0
+
+- Use a calmer teal-blue tile and enlarge/thicken the globe and Bluetooth glyph for launcher-size legibility.
+
 ## 1.5.0
 
 - Refine the icon to a full wireframe globe with a smaller centered Bluetooth rune.
