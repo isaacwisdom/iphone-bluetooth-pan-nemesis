@@ -2,6 +2,7 @@ package org.egmp.bluetoothpan;
 
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.content.Intent;
@@ -16,13 +17,17 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Set;
 
 public final class PanControllerService extends Service {
     private static final String TAG = "BtPanTest";
     private static final int PROFILE_PAN = 5;
     private static final int DISCONNECTED = 0;
+    private static final int CONNECTING = 1;
     private static final int CONNECTED = 2;
+    private static final int DISCONNECTING = 3;
+    private static final int UNKNOWN = -1;
     private volatile BluetoothProfile pan;
     private volatile boolean stop;
     private BluetoothAdapter adapter;
@@ -30,17 +35,23 @@ public final class PanControllerService extends Service {
     private Thread worker;
     private SharedPreferences prefs;
     private volatile long proxyRequestAt;
+    private long nextAutomaticAttemptAt;
+    private int lastObservedState = Integer.MIN_VALUE;
+    private boolean lastObservedNetwork;
+    private String lastObservedDevice = "";
 
     private final BluetoothProfile.ServiceListener listener = new BluetoothProfile.ServiceListener() {
         @Override public void onServiceConnected(int profile, BluetoothProfile proxy) {
             pan = proxy;
             proxyRequestAt = 0L;
+            lastObservedState = Integer.MIN_VALUE;
             log("PAN profile ready: " + proxy.getClass().getName());
             setStatus("Bluetooth PAN profile ready");
         }
         @Override public void onServiceDisconnected(int profile) {
             pan = null;
             proxyRequestAt = 0L;
+            lastObservedState = Integer.MIN_VALUE;
             log("PAN profile disconnected");
             setStatus("Bluetooth PAN profile unavailable");
         }
@@ -76,15 +87,27 @@ public final class PanControllerService extends Service {
 
     private void controlLoop() {
         int handled = prefs.getInt("handled_sequence", 0);
-        if (prefs.getBoolean("automatic", false) && prefs.getBoolean("requested_connect", false)) {
-            connectSelected();
-        }
         while (!stop) {
             int sequence = prefs.getInt("request_sequence", 0);
             if (sequence != handled) {
-                if (prefs.getBoolean("requested_connect", false)) connectSelected(); else disconnectSelected();
+                if (prefs.getBoolean("requested_connect", false)) {
+                    nextAutomaticAttemptAt = System.currentTimeMillis() + 30000L;
+                    connectSelected();
+                } else {
+                    disconnectSelected();
+                }
                 handled = sequence;
                 prefs.edit().putInt("handled_sequence", handled).commit();
+            } else {
+                int state = observeSelected();
+                long now = System.currentTimeMillis();
+                if (state == DISCONNECTED && prefs.getBoolean("automatic", false)
+                        && prefs.getBoolean("requested_connect", false)
+                        && now >= nextAutomaticAttemptAt) {
+                    nextAutomaticAttemptAt = now + 30000L;
+                    log("automatic reconnect after confirmed disconnection");
+                    connectSelected();
+                }
             }
             sleep(1000L);
         }
@@ -96,47 +119,161 @@ public final class PanControllerService extends Service {
     }
 
     private void connectSelected() {
-        BluetoothDevice d = selected();
+        BluetoothDevice d = selected(true);
         if (d == null || !waitForProxy()) return;
-        int before = connectionState(d);
+        int before = connectionState(d, true);
         log("connect request for " + label(d) + "; state before=" + before);
-        if (before == CONNECTED) { owned = d; reportConnected(); return; }
-        setStatus("Connecting to " + name(d) + "…");
-        Object accepted = invoke("connect", d);
-        if (!Boolean.TRUE.equals(accepted)) {
-            setStatus("Connection request was refused by the PAN service");
+        if (panNetworkReady()) {
+            owned = d;
+            log("usable bt-pan network already exists; skipping connect call");
+            reportConnected();
+            return;
+        }
+        if (before == DISCONNECTING) {
+            setStatus("Waiting for the previous disconnect…");
+            for (int i = 0; i < 10 && !stop && before == DISCONNECTING; i++) {
+                sleep(1000L);
+                before = connectionState(d, false);
+            }
+        }
+        if (before == DISCONNECTED || before == UNKNOWN) {
+            setStatus("Connecting to " + name(d) + "…");
+            Object accepted = invoke("connect", d, true);
+            if (!Boolean.TRUE.equals(accepted)) {
+                setStatus("Connection request was refused by the PAN service");
+                return;
+            }
+        } else if (before == CONNECTING) {
+            setStatus("Connection already in progress…");
+        } else if (before == CONNECTED) {
+            setStatus("Bluetooth connected; waiting for an IP address");
+        } else {
+            setStatus("PAN is busy; try again shortly");
             return;
         }
         owned = d;
         for (int i = 0; i < 30 && !stop; i++) {
             sleep(1000L);
-            int state = connectionState(d);
+            if (!prefs.getBoolean("requested_connect", true)) {
+                log("connection wait cancelled by disconnect request");
+                return;
+            }
+            int state = connectionState(d, false);
             log("connection state=" + state + "; " + networkSummary());
-            if (state == CONNECTED && networkConnected()) { reportConnected(); return; }
+            if (panNetworkReady()) { reportConnected(); return; }
         }
-        int state = connectionState(d);
+        int state = connectionState(d, true);
         if (state == CONNECTED) setStatus("Bluetooth connected; waiting for an IP address");
         else setStatus("Connection failed or timed out");
     }
 
     private void disconnectSelected() {
-        BluetoothDevice d = owned != null ? owned : selected();
+        BluetoothDevice d = owned != null ? owned : selected(true);
         if (d == null || !waitForProxy()) return;
-        int state = connectionState(d);
+        int state = connectionState(d, true);
         log("disconnect request for " + label(d) + "; state before=" + state);
-        if (state != DISCONNECTED) invoke("disconnect", d);
-        owned = null;
-        setStatus("Disconnected");
+        if (state == DISCONNECTED && !panNetworkReady()) {
+            owned = null;
+            setStatus("Disconnected");
+            return;
+        }
+        setStatus("Disconnecting from " + name(d) + "…");
+        if (state != DISCONNECTING) {
+            Object accepted = invoke("disconnect", d, true);
+            if (!Boolean.TRUE.equals(accepted))
+                log("disconnect was not accepted; waiting for actual state before reporting failure");
+        }
+        for (int i = 0; i < 15 && !stop; i++) {
+            sleep(1000L);
+            if (prefs.getBoolean("requested_connect", false)) {
+                log("disconnect wait cancelled by connect request");
+                return;
+            }
+            state = connectionState(d, false);
+            boolean network = panNetworkReady();
+            log("disconnect state=" + state + "; " + networkSummary());
+            if (state == DISCONNECTED && !network) {
+                owned = null;
+                setStatus("Disconnected");
+                return;
+            }
+        }
+        state = connectionState(d, true);
+        if (state == DISCONNECTED)
+            setStatus("Disconnect incomplete — PAN network still active");
+        else
+            setStatus("Disconnect failed or timed out");
     }
 
-    private BluetoothDevice selected() {
+    private BluetoothDevice selected(boolean reportMissing) {
         String address = prefs.getString("device", "");
         Set<BluetoothDevice> bonded = adapter.getBondedDevices();
         if (bonded != null) for (BluetoothDevice d : bonded) {
             if (d.getAddress().equalsIgnoreCase(address)) return d;
         }
-        setStatus(address.length() == 0 ? "Select a paired iPhone" : "Selected phone is no longer paired");
+        if (address.length() == 0 && pan != null) {
+            try {
+                List<BluetoothDevice> connected = pan.getConnectedDevices();
+                if (connected != null && connected.size() == 1)
+                    return rememberDiscovered(connected.get(0), "connected PAN device");
+            } catch (Throwable t) {
+                log("connected PAN device discovery failed: " + rootMessage(t));
+            }
+        }
+        BluetoothDevice onlyPhone = null;
+        int phoneCount = 0;
+        if (address.length() == 0 && bonded != null) for (BluetoothDevice d : bonded) {
+            BluetoothClass type = d.getBluetoothClass();
+            if (type != null && type.getMajorDeviceClass() == BluetoothClass.Device.Major.PHONE) {
+                onlyPhone = d;
+                phoneCount++;
+            }
+        }
+        if (phoneCount == 1) return rememberDiscovered(onlyPhone, "only bonded phone");
+        if (reportMissing)
+            setStatus(address.length() == 0 ? "Select a paired iPhone" : "Selected phone is no longer paired");
         return null;
+    }
+
+    private BluetoothDevice rememberDiscovered(BluetoothDevice d, String reason) {
+        prefs.edit().putString("device", d.getAddress()).commit();
+        log("selected " + label(d) + " as " + reason);
+        return d;
+    }
+
+    private int observeSelected() {
+        BluetoothDevice d = selected(true);
+        if (d == null) return UNKNOWN;
+        if (pan == null) {
+            requestProfileProxy();
+            return UNKNOWN;
+        }
+        int state = connectionState(d, false);
+        boolean network = panNetworkReady();
+        String address = d.getAddress();
+        if (!address.equals(lastObservedDevice) || state != lastObservedState || network != lastObservedNetwork) {
+            log("observed " + label(d) + ": state=" + state + "; " + networkSummary());
+            lastObservedDevice = address;
+            lastObservedState = state;
+            lastObservedNetwork = network;
+            if (network) {
+                owned = d;
+                reportConnected();
+            } else if (state == CONNECTED) {
+                owned = d;
+                setStatus("Bluetooth connected; waiting for an IP address");
+            } else if (state == CONNECTING) {
+                setStatus("Connecting to " + name(d) + "…");
+            } else if (state == DISCONNECTING) {
+                setStatus("Disconnecting from " + name(d) + "…");
+            } else if (state == DISCONNECTED) {
+                owned = null;
+                setStatus("Disconnected");
+            } else {
+                setStatus("Bluetooth PAN state unavailable");
+            }
+        }
+        return network ? CONNECTED : state;
     }
 
     private boolean waitForProxy() {
@@ -163,19 +300,19 @@ public final class PanControllerService extends Service {
         }
     }
 
-    private int connectionState(BluetoothDevice d) {
-        Object value = invoke("getConnectionState", d);
+    private int connectionState(BluetoothDevice d, boolean report) {
+        Object value = invoke("getConnectionState", d, report);
         return value instanceof Integer ? ((Integer) value).intValue() : -1;
     }
 
-    private Object invoke(String name, BluetoothDevice d) {
+    private Object invoke(String name, BluetoothDevice d, boolean report) {
         BluetoothProfile profile = pan;
         if (profile == null) return null;
         try {
             Method method = profile.getClass().getMethod(name, BluetoothDevice.class);
             method.setAccessible(true);
             Object result = method.invoke(profile, d);
-            log(name + "(" + label(d) + ") returned " + result);
+            if (report) log(name + "(" + label(d) + ") returned " + result);
             return result;
         } catch (Throwable t) {
             log(name + " failed: " + rootMessage(t));
@@ -189,6 +326,13 @@ public final class PanControllerService extends Service {
             NetworkInfo info = cm.getNetworkInfo(7);
             return info != null && info.isConnected();
         } catch (Throwable ignored) { return false; }
+    }
+
+    private boolean panNetworkReady() {
+        // ConnectivityManager's Bluetooth tracker is reliable on this unit,
+        // while NetworkInterface enumeration may omit bt-pan or its IPv4
+        // address even when traffic is already routed through it.
+        return networkConnected();
     }
 
     private String networkSummary() {
@@ -218,6 +362,7 @@ public final class PanControllerService extends Service {
     }
 
     private void setStatus(String value) {
+        if (value.equals(prefs.getString("status", ""))) return;
         prefs.edit().putString("status", value).commit();
         log(value.replace('\n', ' '));
     }

@@ -116,10 +116,18 @@ public final class MainActivity extends Activity {
             card(canvas, statusCard, Color.rgb(25, 34, 44));
             String status = prefs.getString("status", "Ready");
             boolean connected = status.startsWith("Connected through");
-            paint.setColor(connected ? Color.rgb(53, 214, 139) : Color.rgb(255, 181, 71));
+            boolean working = status.startsWith("Connecting") || status.startsWith("Disconnecting")
+                || status.startsWith("Waiting") || status.startsWith("Bluetooth connected")
+                || status.startsWith("Bluetooth PAN profile ready")
+                || status.startsWith("Connection requested")
+                || status.startsWith("Disconnection requested")
+                || status.startsWith("Connection already in progress");
+            int statusColor = connected ? Color.rgb(53, 214, 139)
+                : working ? Color.rgb(255, 181, 71) : Color.rgb(235, 86, 86);
+            paint.setColor(statusColor);
             canvas.drawCircle(statusCard.left + 22, statusCard.top + 25, 6, paint);
-            text(canvas, connected ? "ONLINE" : "STATUS", statusCard.left + 37, statusCard.top + 30, 14,
-                connected ? Color.rgb(53, 214, 139) : Color.rgb(255, 181, 71), true);
+            text(canvas, connected ? "ONLINE" : working ? "WORKING" : "OFFLINE",
+                statusCard.left + 37, statusCard.top + 30, 14, statusColor, true);
             String[] lines = status.split("\\n");
             text(canvas, lines[0], statusCard.left + 20, statusCard.top + 59, 17, Color.WHITE, true);
             if (lines.length > 1) text(canvas, lines[1], statusCard.left + 20, statusCard.top + 78, 12, Color.rgb(160, 176, 191), true);

@@ -21,6 +21,8 @@ standard Gen5W Bluetooth PAN APIs, but they have not yet been tested.
 - Launchable from NEMESIS Manager's **My Packages** screen
 - Paired-phone selection
 - Manual connect and disconnect
+- Continuous reconciliation of actual PAN/network state, including external
+  connections and unexpected drops
 - Bluetooth, DHCP, and assigned-address status
 - Optional reconnect when the controller starts, disabled by default
 - Automatic enablement and initialization of the stock PAN profile
@@ -49,7 +51,7 @@ The bare `iphone.bluetooth.pan-<version>.zip` is the canonical package archive
 used for Package Store submission and direct installation:
 
 ```sh
-adb push iphone.bluetooth.pan-1.9.0.zip /data/local/tmp/iphone.bluetooth.pan.zip
+adb push iphone.bluetooth.pan-1.9.1.zip /data/local/tmp/iphone.bluetooth.pan.zip
 adb shell '/system/xbin/nemesis install /data/local/tmp/iphone.bluetooth.pan.zip'
 adb shell '/system/xbin/nemesis pkg-launch iphone.bluetooth.pan'
 ```

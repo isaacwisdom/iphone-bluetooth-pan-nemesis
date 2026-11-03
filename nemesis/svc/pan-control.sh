@@ -35,7 +35,7 @@ while [ "$(getprop sys.boot_completed)" != "1" ]; do
     sleep 2
 done
 
-echo "===== iPhone Bluetooth PAN 1.9.0 diagnostic session $(date) ====="
+echo "===== iPhone Bluetooth PAN 1.9.1 diagnostic session $(date) ====="
 echo "iPhone PAN: supervisor started"
 logcat -v time -s BtPanTest:I BluetoothPan:D PanService:D AndroidRuntime:E '*:S' &
 LOGCAT_PID=$!
@@ -45,10 +45,14 @@ start_controller
 
 while true; do
     sleep 15
-    # Re-sending the adapter-state start request is harmless when PanService is
-    # healthy and repairs the state where its ServiceRecord remains registered
-    # but the profile binder stopped after a disconnect.
-    start_pan >/dev/null 2>&1
+    # Do not re-send the adapter-state initialization while PanService is
+    # healthy: this stock implementation can lose its per-device state when it
+    # receives that start request during an active connection.
+    if ! dumpsys activity services com.android.bluetooth/.pan.PanService 2>/dev/null \
+        | grep -q 'ServiceRecord'; then
+        echo "iPhone PAN: stock PAN service stopped; starting it"
+        start_pan
+    fi
     if ! dumpsys activity services "$APP_COMPONENT" 2>/dev/null \
         | grep -q 'ServiceRecord'; then
         echo "iPhone PAN: controller stopped; starting it"

@@ -35,7 +35,7 @@ make_mock sleep \
 
 TEST_TMP="$TMP" PATH="$MOCK:$PATH" /bin/sh "$ROOT/nemesis/svc/pan-control.sh" > "$TMP/output" 2>&1
 
-grep -q 'iPhone Bluetooth PAN 1.9.0 diagnostic session' "$TMP/output"
+grep -q 'iPhone Bluetooth PAN 1.9.1 diagnostic session' "$TMP/output"
 grep -q 'I/BtPanTest.*captured diagnostic' "$TMP/output"
 grep -q 'pm enable --user 0 com.android.bluetooth/.pan.PanService' "$TMP/calls"
 grep -q 'am startservice -n com.android.bluetooth/.pan.PanService' "$TMP/calls"

@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.9.1
+
+- Reconcile the selected phone's real PAN and network state at startup and
+  continuously, including connections initiated outside the app and drops.
+- Discover an already-connected PAN device at startup, or automatically select
+  the sole bonded phone when no saved selection exists.
+- Make Connect idempotent for already-connected and already-connecting phones.
+- Confirm both PAN disconnection and network teardown before reporting a
+  successful Disconnect, with explicit timeout states otherwise.
+- Retry automatic reconnect only after confirmed disconnection, with a
+  30-second cooldown between attempts.
+- Log only observed state transitions during idle monitoring.
+- Avoid reinitializing a healthy PanService, which can erase its active-device
+  state while the PAN network is still connected.
+- Let an opposite button request cancel an in-progress connect/disconnect wait
+  instead of sitting behind its timeout.
+- Treat Android's live Bluetooth network as connected even when a restarted
+  PanService has forgotten its device-state entry; do not require Java's
+  unreliable `bt-pan` address enumeration.
+- Use green for online, amber for transitional states, and red for offline or
+  failed states in the dashboard.
+- Replace the indefinite "waiting for network cleanup" message with an explicit
+  disconnect-incomplete error when the PAN network remains active.
+
 ## 1.9.0
 
 - Capture filtered application, Bluetooth PAN, and Android runtime messages in
