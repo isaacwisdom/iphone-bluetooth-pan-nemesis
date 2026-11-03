@@ -1,0 +1,7 @@
+/.build/
+/dist/
+*.p12
+*.jks
+*.keystore
+*.pass
+.DS_Store

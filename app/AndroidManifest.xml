@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="org.egmp.bluetoothpan.nemesis"
+    android:versionCode="120"
+    android:versionName="1.2.0">
+    <uses-sdk android:minSdkVersion="19" android:targetSdkVersion="19" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <application android:label="iPhone Bluetooth PAN" android:allowBackup="false"
+        android:theme="@android:style/Theme.Holo.NoActionBar">
+        <activity android:name="org.egmp.bluetoothpan.MainActivity" android:label="iPhone Bluetooth PAN"
+            android:screenOrientation="landscape" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <service android:name="org.egmp.bluetoothpan.PanControllerService" android:exported="true" />
+    </application>
+</manifest>

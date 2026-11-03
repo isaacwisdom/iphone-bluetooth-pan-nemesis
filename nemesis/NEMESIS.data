@@ -1,0 +1,25 @@
+[nemesis]
+version=1.1
+id=iphone.bluetooth.pan
+name=iPhone Bluetooth PAN
+type=application,service
+package-version=1.2.0
+short-desc=Connects the head unit through an iPhone Bluetooth hotspot.
+detailed-desc=Manual Bluetooth PAN connection control with status and optional reconnect at startup.
+os=4.4.2
+models=NEEV23*
+postinstall=scripts/postinstall.sh
+preuninstall=scripts/preuninstall.sh
+
+[app.0]
+kind=apk
+path=app/IPhoneBluetoothPan.apk
+package=org.egmp.bluetoothpan.nemesis
+component=org.egmp.bluetoothpan.nemesis/org.egmp.bluetoothpan.MainActivity
+
+[service.0]
+name=pan-control
+kind=sh
+path=svc/pan-control.sh
+uid=root
+mode=restart
