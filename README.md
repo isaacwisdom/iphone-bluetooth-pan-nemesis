@@ -28,7 +28,7 @@ Other systems are not currently declared compatible.
 Download `iphone.bluetooth.pan-<version>.zip`, then:
 
 ```sh
-adb push iphone.bluetooth.pan-1.6.0.zip /data/local/tmp/iphone.bluetooth.pan.zip
+adb push iphone.bluetooth.pan-1.7.0.zip /data/local/tmp/iphone.bluetooth.pan.zip
 adb shell '/system/xbin/nemesis install /data/local/tmp/iphone.bluetooth.pan.zip'
 adb shell '/system/xbin/nemesis pkg-launch iphone.bluetooth.pan'
 ```

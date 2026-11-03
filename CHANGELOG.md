@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.0
+
+- Crop transparent icon padding so the artwork fills the NEMESIS launcher slot.
+
 ## 1.6.0
 
 - Use a calmer teal-blue tile and enlarge/thicken the globe and Bluetooth glyph for launcher-size legibility.
