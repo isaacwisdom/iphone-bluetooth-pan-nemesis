@@ -1,5 +1,36 @@
 # Changelog
 
+## 2.0.1
+
+- Apply the automatic-reconnect cooldown immediately after a live connection
+  drops instead of making one premature retry first.
+- Skip the transient connected UI state when a disconnect request arrives at
+  the same moment that PAN network setup completes.
+- Leave reconnect cooldown immediately if automatic reconnect is switched off.
+
+## 2.0.0
+
+- Replace blocking connect/disconnect routines with one serialized state
+  machine driven by persistent user intent and live adapter, phone, PAN-link,
+  and network observations.
+- Wait for Bluetooth and its bonded-device database to stabilize before PAN
+  initialization, avoiding the boot race that left PanService with no
+  `bt-pan` interface.
+- Keep desired connection state separate from observed state so opposite
+  requests, external connections, service restarts, and reconnect cooldowns
+  reconcile predictably.
+- Add bounded PAN proxy recovery after repeated immediate connection drops,
+  while refusing recovery whenever a PAN link or network is active.
+- Derive dashboard color and status from explicit controller states and emit
+  structured transition, observation, command, and result logs.
+
+## 1.9.2
+
+- Detect a PAN request that the remote endpoint immediately drops instead of
+  leaving the dashboard in a misleading 30-second connecting state.
+- Report the fast rejection within three seconds with a Personal Hotspot hint,
+  while preserving the full timeout for connections that remain in progress.
+
 ## 1.9.1
 
 - Reconcile the selected phone's real PAN and network state at startup and

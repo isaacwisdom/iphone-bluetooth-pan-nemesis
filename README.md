@@ -51,7 +51,7 @@ The bare `iphone.bluetooth.pan-<version>.zip` is the canonical package archive
 used for Package Store submission and direct installation:
 
 ```sh
-adb push iphone.bluetooth.pan-1.9.1.zip /data/local/tmp/iphone.bluetooth.pan.zip
+adb push iphone.bluetooth.pan-2.0.1.zip /data/local/tmp/iphone.bluetooth.pan.zip
 adb shell '/system/xbin/nemesis install /data/local/tmp/iphone.bluetooth.pan.zip'
 adb shell '/system/xbin/nemesis pkg-launch iphone.bluetooth.pan'
 ```

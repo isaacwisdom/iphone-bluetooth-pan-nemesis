@@ -29,6 +29,7 @@ public final class MainActivity extends Activity {
 
     private final Runnable refresh = new Runnable() {
         @Override public void run() {
+            if (devices.isEmpty()) loadPhones();
             dashboard.invalidate();
             handler.postDelayed(this, 1000L);
         }
@@ -64,16 +65,11 @@ public final class MainActivity extends Activity {
     }
 
     private void request(boolean connect) {
-        if (devices.isEmpty()) {
-            prefs.edit().putString("status", "No paired phones found").commit();
-            dashboard.invalidate();
-            return;
-        }
-        BluetoothDevice device = devices.get(selected);
         int sequence = prefs.getInt("request_sequence", 0) + 1;
-        prefs.edit().putString("device", device.getAddress()).putBoolean("requested_connect", connect)
-            .putInt("request_sequence", sequence)
-            .putString("status", connect ? "Connection requested…" : "Disconnection requested…").commit();
+        SharedPreferences.Editor edit = prefs.edit().putBoolean("requested_connect", connect)
+            .putInt("request_sequence", sequence);
+        if (!devices.isEmpty()) edit.putString("device", devices.get(selected).getAddress());
+        edit.commit();
         startService(new Intent(this, PanControllerService.class));
         dashboard.invalidate();
     }
@@ -100,8 +96,7 @@ public final class MainActivity extends Activity {
             int height = (int) (getHeight() / drawScale);
             canvas.drawColor(Color.rgb(13, 19, 26));
 
-            text(canvas, "iPhone Hotspot", 36, 46, 28, Color.WHITE, true);
-            text(canvas, "BLUETOOTH PAN", width - 36, 43, 13, Color.rgb(111, 205, 255), false, Paint.Align.RIGHT);
+            text(canvas, "iPhone Bluetooth PAN Hotspot v2.0.1", 36, 46, 28, Color.WHITE, true);
 
             float top = 68;
             phoneCard.set(32, top, width * .52f, top + 86);
@@ -115,13 +110,18 @@ public final class MainActivity extends Activity {
             RectF statusCard = new RectF(width * .55f, top, width - 32, top + 86);
             card(canvas, statusCard, Color.rgb(25, 34, 44));
             String status = prefs.getString("status", "Ready");
-            boolean connected = status.startsWith("Connected through");
-            boolean working = status.startsWith("Connecting") || status.startsWith("Disconnecting")
-                || status.startsWith("Waiting") || status.startsWith("Bluetooth connected")
-                || status.startsWith("Bluetooth PAN profile ready")
-                || status.startsWith("Connection requested")
-                || status.startsWith("Disconnection requested")
-                || status.startsWith("Connection already in progress");
+            String controllerState = prefs.getString("controller_state", "INITIALIZING");
+            boolean connected = "CONNECTED".equals(controllerState);
+            boolean working = "INITIALIZING".equals(controllerState)
+                || "WAITING_FOR_BLUETOOTH".equals(controllerState)
+                || "BLUETOOTH_SETTLING".equals(controllerState)
+                || "WAITING_FOR_PHONE".equals(controllerState)
+                || "STARTING_PAN".equals(controllerState)
+                || "CONNECTING".equals(controllerState)
+                || "CONFIGURING_NETWORK".equals(controllerState)
+                || "DISCONNECTING".equals(controllerState)
+                || "RECONNECT_COOLDOWN".equals(controllerState)
+                || "RECOVERING_PAN".equals(controllerState);
             int statusColor = connected ? Color.rgb(53, 214, 139)
                 : working ? Color.rgb(255, 181, 71) : Color.rgb(235, 86, 86);
             paint.setColor(statusColor);

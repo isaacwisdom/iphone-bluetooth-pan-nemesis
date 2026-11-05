@@ -35,11 +35,16 @@ while [ "$(getprop sys.boot_completed)" != "1" ]; do
     sleep 2
 done
 
-echo "===== iPhone Bluetooth PAN 1.9.1 diagnostic session $(date) ====="
+echo "===== iPhone Bluetooth PAN 2.0.1 diagnostic session $(date) ====="
 echo "iPhone PAN: supervisor started"
 logcat -v time -s BtPanTest:I BluetoothPan:D PanService:D AndroidRuntime:E '*:S' &
 LOGCAT_PID=$!
 echo "iPhone PAN: diagnostic logcat pid=$LOGCAT_PID"
+# Android can report boot complete before the Bluetooth adapter has restored
+# its bonded-device database. Starting PanService in that window can leave it
+# alive but unable to allocate bt-pan, so allow Bluetooth to settle first.
+echo "iPhone PAN: waiting for Bluetooth startup"
+sleep 10
 start_pan
 start_controller
 
